@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>使用说明</title>
+	<style>
+		.content{
+			background:#fff;
+		}
+		pre,ul{
+			text-align:left;
+			margin:0
+		}
+		.pre{
+			font-size:16px
+		}
+		.pre .red{
+			color:red
+		}
+		.pre span{
+			color:green
+		}
+		ul li{
+			margin-bottom:10px
+		}
+		.ml50{
+			margin-left:30px
+		}
+		.ml20{
+			margin-left:20px
+		}
+	</style>
+</head>
+
+<body>
+    <div class="content">
+		<h2>通用接口接入说明(nodejs)</h2>
+		<h3 class="ml20">后台接口：</h3>
+		<ul class="ml50">
+			<li>将lib文件夹拷贝到项目根目录（与api.js同级）</li>
+			<li>lib下的文件依赖包在package.json文件内（执行npm i或复制node_modules）</li>
+			<li>
+				<div>修改 lib目录下的config.js配置文件</div>
+				<div class="ml50">
+					<div>1.redis</div>
+					<div class="ml50">true：表示缓存内容存入redis数据库（多进程模式）</div>
+					<div class="ml50">false：表示缓存内容存入内存（单进程模式）</div>
+					<div>2.framework </div>
+					<div class="ml50">koa：koa框架填写该字符串</div>
+					<div class="ml50">express：同理</div>
+					<div class="ml50">
+						例如：
+						module.exports = {
+							framework : 'koa',
+							redis:true
+						}
+					</div>
+				</div>
+			</li>
+			<li>将lib目录复制到项目根目录（与api.js同级）</li>
+			<pre class="pre">  api.js添加如下引用
+			
+  import filterAction from './lib/filter'<span>//引入过滤器方法</span>
+  import {init} from './lib/refresh'<span>//初始化缓存</span>
+  
+  <span class="red">koa:</span>
+  var app = Koa();
+  <span>//添加过滤器中间件</span>
+  app.use(function (ctx, next) {
+  	let r = filterAction(ctx,next);
+  	if(r)
+  		return next()
+  	else
+  		return
+  })
+  <span>//初始化缓存</span>
+  (function() {
+  	init();
+  })()
+  
+  <span class="red">express:</span>
+  var app = express();
+  <span>//添加过滤器中间件</span>
+  app.use(async function (req,res, next) {
+    let r = await filterAction(req,next);
+    if(r)
+  	return next()
+    else
+  	return
+  })
+  <span>//初始化缓存</span>
+  (function() {
+  	init();
+  })()
+</pre>
+			<li>
+				<div>过滤器验证通过，调用统一方法进行返回</div>
+				<div class="ml50">引入lib/response.js文件，例如：</div>
+<pre class="pre" >
+	
+    import setRes from '../lib/response'
+    <span>//ctx,请求对象，data：业务数据</span>
+    setRes(ctx,{code:200,msg:'成功'},data)
+</pre>
+			</li>
+		</ul>		
+		<h3 class="ml20">前台页面：</h3>
+		<ul class="ml50">
+			<li>项目由vue-cli生成</li>
+			<li>页面源码路径 src\components </li>
+			<li>页面路由路径 src\router</li>
+		</ul>
+		</ul>		
+		<h3 class="ml20">数据库，redis配置：</h3>
+		<ul class="ml50">
+			<li>项目根路径下env.cnf文件内加入数据库和redis配置,例如：</li>
+<pre class="pre">
+<span class="red">const config = {
+    DB: {
+		DB_USER:'1',
+		DB_PWD:'2',
+		DB_DB:'3',
+		DB_HOST:'4',
+		DB_PORT:3306,
+		DB_DIALECT:'mysql'
+	},
+	REDIS: {
+        HOST: "a03",
+        PORT: 3637,
+        AUTH: "12345",
+        SELECT_DB: 1 //用redis的第几个数据库（从索引0开始）
+    },
+}
+module.exports = config;
+</span>
+</pre>
+		</ul>	
+		</ul>		
+		<h3 class="ml20">请求方</h3>
+		<ul class="ml50">
+			<li>使用 lib/utils.js 文件内toSignStr，sha1方法生成签名串，如下所示：</li>
+<pre class="pre">
+<span>//sha1加密</span>
+const crypto = require('crypto');
+const iconv = require('iconv-lite');
+export const sha1 = function(app_secret,str){
+	str = iconv.encode(str,'utf8');
+	str = crypto.createHmac('sha1', app_secret).update(str).digest('hex')
+	str = new Buffer(str).toString('base64');
+	return str
+}
+export const toSignStr = function(comingJson,secret){
+	let cryptoArr = new Array();
+	for (let key in comingJson) {
+		<span>//不把sign作为加密项</span>
+		if (key != 'sign') {
+			cryptoArr.push(key + '=' + comingJson[key]);
+		}
+	}
+	cryptoArr = cryptoArr.sort()
+	let signStr = cryptoArr.join('&')
+	return sha1(secret,signStr);
+}
+</pre>
+		</ul>		
+	</div>
+    <!-- built files will be auto injected -->
+</body>
+
+</html>
