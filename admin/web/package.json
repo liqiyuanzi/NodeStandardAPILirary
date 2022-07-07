@@ -43,7 +43,7 @@
     "js-md5": "^0.7.3",
     "less": "^2.7.3",
     "less-loader": "^4.0.5",
-    "moment": "^2.20.1",
+    "moment": "^2.29.4",
     "nightwatch": "^0.9.12",
     "node-notifier": "^5.1.2",
     "node-sass": "^4.7.2",
